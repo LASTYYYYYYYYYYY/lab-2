@@ -1,0 +1,2077 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="initial-scale=1,user-scalable=no,maximum-scale=1,width=device-width">
+        <meta name="mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <link rel="stylesheet" href="css/leaflet.css">
+        <link rel="stylesheet" href="css/L.Control.Layers.Tree.css">
+        <link rel="stylesheet" href="css/qgis2web.css">
+        <link rel="stylesheet" href="css/fontawesome-all.min.css">
+        <link rel="stylesheet" href="css/leaflet-search.css">
+        <link rel="stylesheet" href="css/filter.css">
+<link rel="stylesheet" href="css/nouislider.min.css">
+        <link rel="stylesheet" href="css/leaflet-control-geocoder.Geocoder.css">
+        <link rel="stylesheet" href="css/leaflet-measure.css">
+        <style>
+        html, body, #map {
+            width: 100%;
+            height: 100%;
+            padding: 0;
+            margin: 0;
+        }
+        </style>
+        <title></title>
+    </head>
+    <body>
+        <div id="map">
+        </div>
+        <script src="js/qgis2web_expressions.js"></script>
+        <script src="js/leaflet.js"></script>
+        <script src="js/L.Control.Layers.Tree.min.js"></script>
+        <script src="js/leaflet.rotatedMarker.js"></script>
+        <script src="js/leaflet.pattern.js"></script>
+        <script src="js/leaflet-hash.js"></script>
+        <script src="js/Autolinker.min.js"></script>
+        <script src="js/rbush.min.js"></script>
+        <script src="js/labelgun.min.js"></script>
+        <script src="js/labels.js"></script>
+        <script src="js/leaflet-control-geocoder.Geocoder.js"></script>
+        <script src="js/leaflet-measure.js"></script>
+        <script src="js/leaflet-search.js"></script>
+        <script src="js/tailDT.js"></script>
+<script src="js/nouislider.min.js"></script>
+<script src="js/wNumb.js"></script>
+        <script src="data/building_2.js"></script>
+        <script src="data/highway_3.js"></script>
+        <script>
+        var map = L.map('map', {
+            zoomControl:false, maxZoom:28, minZoom:1
+        }).fitBounds([[56.47756773072777,84.93024533843278],[56.50141684655278,84.99581260934923]]);
+        var hash = new L.Hash(map);
+        map.attributionControl.setPrefix('<a href="https://github.com/tomchadwin/qgis2web" target="_blank">qgis2web</a> &middot; <a href="https://leafletjs.com" title="A JS library for interactive maps">Leaflet</a> &middot; <a href="https://qgis.org">QGIS</a>');
+        var autolinker = new Autolinker({truncate: {length: 30, location: 'smart'}});
+        // remove popup's row if "visible-with-data"
+        function removeEmptyRowsFromPopupContent(content, feature) {
+         var tempDiv = document.createElement('div');
+         tempDiv.innerHTML = content;
+         var rows = tempDiv.querySelectorAll('tr');
+         for (var i = 0; i < rows.length; i++) {
+             var td = rows[i].querySelector('td.visible-with-data');
+             var key = td ? td.id : '';
+             if (td && td.classList.contains('visible-with-data') && feature.properties[key] == null) {
+                 rows[i].parentNode.removeChild(rows[i]);
+             }
+         }
+         return tempDiv.innerHTML;
+        }
+        // add class to format popup if it contains media
+		function addClassToPopupIfMedia(content, popup) {
+			var tempDiv = document.createElement('div');
+			tempDiv.innerHTML = content;
+			if (tempDiv.querySelector('td img')) {
+				popup._contentNode.classList.add('media');
+					// Delay to force the redraw
+					setTimeout(function() {
+						popup.update();
+					}, 10);
+			} else {
+				popup._contentNode.classList.remove('media');
+			}
+		}
+        var zoomControl = L.control.zoom({
+            position: 'topleft'
+        }).addTo(map);
+        var measureControl = new L.Control.Measure({
+            position: 'topleft',
+            primaryLengthUnit: 'meters',
+            secondaryLengthUnit: 'kilometers',
+            primaryAreaUnit: 'sqmeters',
+            secondaryAreaUnit: 'hectares'
+        });
+        measureControl.addTo(map);
+        document.getElementsByClassName('leaflet-control-measure-toggle')[0].innerHTML = '';
+        document.getElementsByClassName('leaflet-control-measure-toggle')[0].className += ' fas fa-ruler';
+        var bounds_group = new L.featureGroup([]);
+        function setBounds() {
+        }
+        map.createPane('pane_YandexSatellite_0');
+        map.getPane('pane_YandexSatellite_0').style.zIndex = 400;
+        var layer_YandexSatellite_0 = L.tileLayer('https://core-sat.maps.yandex.net/tiles?l=sat&v=3.1025.0&x={x}&y={y}&z={z}&scale=1&lang=ru_RU', {
+            pane: 'pane_YandexSatellite_0',
+            opacity: 1.0,
+            attribution: '<a href="">Yandex Satellite</a>',
+            minZoom: 1,
+            maxZoom: 28,
+            minNativeZoom: 0,
+            maxNativeZoom: 19
+        });
+        layer_YandexSatellite_0;
+        map.addLayer(layer_YandexSatellite_0);
+        map.createPane('pane_OSMStandard_1');
+        map.getPane('pane_OSMStandard_1').style.zIndex = 401;
+        var layer_OSMStandard_1 = L.tileLayer('http://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            pane: 'pane_OSMStandard_1',
+            opacity: 1.0,
+            attribution: '<a href="https://www.openstreetmap.org/copyright">© OpenStreetMap contributors, CC-BY-SA</a>',
+            minZoom: 1,
+            maxZoom: 28,
+            minNativeZoom: 0,
+            maxNativeZoom: 19
+        });
+        layer_OSMStandard_1;
+        map.addLayer(layer_OSMStandard_1);
+        function pop_building_2(feature, layer) {
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['fid'] !== null ? autolinker.link(String(feature.properties['fid']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['full_id'] !== null ? autolinker.link(String(feature.properties['full_id']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['osm_id'] !== null ? autolinker.link(String(feature.properties['osm_id']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['osm_type'] !== null ? autolinker.link(String(feature.properties['osm_type']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['building'] !== null ? autolinker.link(String(feature.properties['building']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['content'] !== null ? autolinker.link(String(feature.properties['content']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['construction_date'] !== null ? autolinker.link(String(feature.properties['construction_date']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['recycling_type'] !== null ? autolinker.link(String(feature.properties['recycling_type']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['substance'] !== null ? autolinker.link(String(feature.properties['substance']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['opening_date'] !== null ? autolinker.link(String(feature.properties['opening_date']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['proposed'] !== null ? autolinker.link(String(feature.properties['proposed']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['service:vehicle:oil_change'] !== null ? autolinker.link(String(feature.properties['service:vehicle:oil_change']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['disused:building'] !== null ? autolinker.link(String(feature.properties['disused:building']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['unisex'] !== null ? autolinker.link(String(feature.properties['unisex']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['changing_table'] !== null ? autolinker.link(String(feature.properties['changing_table']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['roof:direction'] !== null ? autolinker.link(String(feature.properties['roof:direction']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['club'] !== null ? autolinker.link(String(feature.properties['club']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['building:2021-2022'] !== null ? autolinker.link(String(feature.properties['building:2021-2022']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['tower:construction'] !== null ? autolinker.link(String(feature.properties['tower:construction']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['communication:mobile_phone'] !== null ? autolinker.link(String(feature.properties['communication:mobile_phone']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['bin'] !== null ? autolinker.link(String(feature.properties['bin']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['bench'] !== null ? autolinker.link(String(feature.properties['bench']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['house'] !== null ? autolinker.link(String(feature.properties['house']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['damage:type'] !== null ? autolinker.link(String(feature.properties['damage:type']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['pipeline'] !== null ? autolinker.link(String(feature.properties['pipeline']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['ele'] !== null ? autolinker.link(String(feature.properties['ele']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['toilets:wheelchair'] !== null ? autolinker.link(String(feature.properties['toilets:wheelchair']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['was:man_made'] !== null ? autolinker.link(String(feature.properties['was:man_made']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['wheelchair:description:ru'] !== null ? autolinker.link(String(feature.properties['wheelchair:description:ru']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['delivery'] !== null ? autolinker.link(String(feature.properties['delivery']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['contact:vk'] !== null ? autolinker.link(String(feature.properties['contact:vk']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['contact:ok'] !== null ? autolinker.link(String(feature.properties['contact:ok']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['contact:instagram'] !== null ? autolinker.link(String(feature.properties['contact:instagram']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['contact:facebook'] !== null ? autolinker.link(String(feature.properties['contact:facebook']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['fuel:cng'] !== null ? autolinker.link(String(feature.properties['fuel:cng']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['source_ref'] !== null ? autolinker.link(String(feature.properties['source_ref']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['shelter_type'] !== null ? autolinker.link(String(feature.properties['shelter_type']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['nohousenumber'] !== null ? autolinker.link(String(feature.properties['nohousenumber']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['covered'] !== null ? autolinker.link(String(feature.properties['covered']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['carpenter'] !== null ? autolinker.link(String(feature.properties['carpenter']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['public_transport'] !== null ? autolinker.link(String(feature.properties['public_transport']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['bus'] !== null ? autolinker.link(String(feature.properties['bus']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['comment'] !== null ? autolinker.link(String(feature.properties['comment']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['name:be'] !== null ? autolinker.link(String(feature.properties['name:be']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['floor'] !== null ? autolinker.link(String(feature.properties['floor']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['supervised'] !== null ? autolinker.link(String(feature.properties['supervised']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['frequency'] !== null ? autolinker.link(String(feature.properties['frequency']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['mobile'] !== null ? autolinker.link(String(feature.properties['mobile']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['service_times'] !== null ? autolinker.link(String(feature.properties['service_times']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['link'] !== null ? autolinker.link(String(feature.properties['link']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['fuel:octane_95'] !== null ? autolinker.link(String(feature.properties['fuel:octane_95']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['fuel:octane_92'] !== null ? autolinker.link(String(feature.properties['fuel:octane_92']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['fuel:diesel'] !== null ? autolinker.link(String(feature.properties['fuel:diesel']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['barrier'] !== null ? autolinker.link(String(feature.properties['barrier']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['takeaway'] !== null ? autolinker.link(String(feature.properties['takeaway']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['compressed_air'] !== null ? autolinker.link(String(feature.properties['compressed_air']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['addr:housename'] !== null ? autolinker.link(String(feature.properties['addr:housename']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['aeroway'] !== null ? autolinker.link(String(feature.properties['aeroway']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['addr:place'] !== null ? autolinker.link(String(feature.properties['addr:place']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['common_name'] !== null ? autolinker.link(String(feature.properties['common_name']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['attraction'] !== null ? autolinker.link(String(feature.properties['attraction']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['addr:source'] !== null ? autolinker.link(String(feature.properties['addr:source']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['craft'] !== null ? autolinker.link(String(feature.properties['craft']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['name:tt'] !== null ? autolinker.link(String(feature.properties['name:tt']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['source:addr'] !== null ? autolinker.link(String(feature.properties['source:addr']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['brand:ru'] !== null ? autolinker.link(String(feature.properties['brand:ru']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['atm'] !== null ? autolinker.link(String(feature.properties['atm']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['bath:hot'] !== null ? autolinker.link(String(feature.properties['bath:hot']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['ruins:building'] !== null ? autolinker.link(String(feature.properties['ruins:building']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['was:amenity'] !== null ? autolinker.link(String(feature.properties['was:amenity']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['name:signed'] !== null ? autolinker.link(String(feature.properties['name:signed']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['service:vehicle:used_car_sales'] !== null ? autolinker.link(String(feature.properties['service:vehicle:used_car_sales']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['second_hand'] !== null ? autolinker.link(String(feature.properties['second_hand']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['not:brand:wikidata'] !== null ? autolinker.link(String(feature.properties['not:brand:wikidata']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['was:building'] !== null ? autolinker.link(String(feature.properties['was:building']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['denomination:ru'] !== null ? autolinker.link(String(feature.properties['denomination:ru']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['architect'] !== null ? autolinker.link(String(feature.properties['architect']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['opening_hours:signed'] !== null ? autolinker.link(String(feature.properties['opening_hours:signed']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['check_date:opening_hours'] !== null ? autolinker.link(String(feature.properties['check_date:opening_hours']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['self_service'] !== null ? autolinker.link(String(feature.properties['self_service']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['automated'] !== null ? autolinker.link(String(feature.properties['automated']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['name:ja'] !== null ? autolinker.link(String(feature.properties['name:ja']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['cargo'] !== null ? autolinker.link(String(feature.properties['cargo']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['internet_access:fee'] !== null ? autolinker.link(String(feature.properties['internet_access:fee']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['fax'] !== null ? autolinker.link(String(feature.properties['fax']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['branch'] !== null ? autolinker.link(String(feature.properties['branch']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['organic'] !== null ? autolinker.link(String(feature.properties['organic']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['building:cladding'] !== null ? autolinker.link(String(feature.properties['building:cladding']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['operator:wikidata'] !== null ? autolinker.link(String(feature.properties['operator:wikidata']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['operator:en'] !== null ? autolinker.link(String(feature.properties['operator:en']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['level'] !== null ? autolinker.link(String(feature.properties['level']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['name:pl'] !== null ? autolinker.link(String(feature.properties['name:pl']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['name:de'] !== null ? autolinker.link(String(feature.properties['name:de']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['tower:type'] !== null ? autolinker.link(String(feature.properties['tower:type']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['was:healthcare'] !== null ? autolinker.link(String(feature.properties['was:healthcare']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['building:roof'] !== null ? autolinker.link(String(feature.properties['building:roof']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['brand:en'] !== null ? autolinker.link(String(feature.properties['brand:en']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['service:vehicle:new_car_sales'] !== null ? autolinker.link(String(feature.properties['service:vehicle:new_car_sales']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['payment:visa'] !== null ? autolinker.link(String(feature.properties['payment:visa']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['payment:mastercard'] !== null ? autolinker.link(String(feature.properties['payment:mastercard']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['was:shop'] !== null ? autolinker.link(String(feature.properties['was:shop']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['heritage:name'] !== null ? autolinker.link(String(feature.properties['heritage:name']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['heritage'] !== null ? autolinker.link(String(feature.properties['heritage']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['name:ar'] !== null ? autolinker.link(String(feature.properties['name:ar']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['operator:type'] !== null ? autolinker.link(String(feature.properties['operator:type']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['brand:wikipedia'] !== null ? autolinker.link(String(feature.properties['brand:wikipedia']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['brand:wikidata'] !== null ? autolinker.link(String(feature.properties['brand:wikidata']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['smoking'] !== null ? autolinker.link(String(feature.properties['smoking']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['ref:sobory.ru'] !== null ? autolinker.link(String(feature.properties['ref:sobory.ru']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['building:min_level'] !== null ? autolinker.link(String(feature.properties['building:min_level']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['roof:material'] !== null ? autolinker.link(String(feature.properties['roof:material']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['cinema:3D'] !== null ? autolinker.link(String(feature.properties['cinema:3D']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['abandoned'] !== null ? autolinker.link(String(feature.properties['abandoned']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['landuse'] !== null ? autolinker.link(String(feature.properties['landuse']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['old_name:ru'] !== null ? autolinker.link(String(feature.properties['old_name:ru']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['description'] !== null ? autolinker.link(String(feature.properties['description']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['building:parts'] !== null ? autolinker.link(String(feature.properties['building:parts']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['entrance'] !== null ? autolinker.link(String(feature.properties['entrance']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['capacity'] !== null ? autolinker.link(String(feature.properties['capacity']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['payment:debit_cards'] !== null ? autolinker.link(String(feature.properties['payment:debit_cards']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['payment:credit_cards'] !== null ? autolinker.link(String(feature.properties['payment:credit_cards']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['payment:cash'] !== null ? autolinker.link(String(feature.properties['payment:cash']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['stars'] !== null ? autolinker.link(String(feature.properties['stars']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['rooms'] !== null ? autolinker.link(String(feature.properties['rooms']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['name:zh'] !== null ? autolinker.link(String(feature.properties['name:zh']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['denomination'] !== null ? autolinker.link(String(feature.properties['denomination']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['ref:mkrf_theaters'] !== null ? autolinker.link(String(feature.properties['ref:mkrf_theaters']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['disused:shop'] !== null ? autolinker.link(String(feature.properties['disused:shop']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['disused:amenity'] !== null ? autolinker.link(String(feature.properties['disused:amenity']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['parking'] !== null ? autolinker.link(String(feature.properties['parking']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['abandoned:building'] !== null ? autolinker.link(String(feature.properties['abandoned:building']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['name:ca'] !== null ? autolinker.link(String(feature.properties['name:ca']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['alt_name_1'] !== null ? autolinker.link(String(feature.properties['alt_name_1']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['int_name'] !== null ? autolinker.link(String(feature.properties['int_name']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['voltage'] !== null ? autolinker.link(String(feature.properties['voltage']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['substation'] !== null ? autolinker.link(String(feature.properties['substation']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['construction'] !== null ? autolinker.link(String(feature.properties['construction']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['service'] !== null ? autolinker.link(String(feature.properties['service']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['addr:street:en'] !== null ? autolinker.link(String(feature.properties['addr:street:en']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['lit'] !== null ? autolinker.link(String(feature.properties['lit']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['old_name'] !== null ? autolinker.link(String(feature.properties['old_name']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['seasonal'] !== null ? autolinker.link(String(feature.properties['seasonal']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['ruins'] !== null ? autolinker.link(String(feature.properties['ruins']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['toilets'] !== null ? autolinker.link(String(feature.properties['toilets']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['social_facility:for'] !== null ? autolinker.link(String(feature.properties['social_facility:for']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['social_facility'] !== null ? autolinker.link(String(feature.properties['social_facility']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['contact:email'] !== null ? autolinker.link(String(feature.properties['contact:email']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['wheelchair'] !== null ? autolinker.link(String(feature.properties['wheelchair']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['tower'] !== null ? autolinker.link(String(feature.properties['tower']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['man_made'] !== null ? autolinker.link(String(feature.properties['man_made']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['addr:flats'] !== null ? autolinker.link(String(feature.properties['addr:flats']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['highway'] !== null ? autolinker.link(String(feature.properties['highway']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['access'] !== null ? autolinker.link(String(feature.properties['access']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['building:architecture'] !== null ? autolinker.link(String(feature.properties['building:architecture']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['religion'] !== null ? autolinker.link(String(feature.properties['religion']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['drive_through'] !== null ? autolinker.link(String(feature.properties['drive_through']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['surface'] !== null ? autolinker.link(String(feature.properties['surface']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['operator'] !== null ? autolinker.link(String(feature.properties['operator']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['historic'] !== null ? autolinker.link(String(feature.properties['historic']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['building:colour'] !== null ? autolinker.link(String(feature.properties['building:colour']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['ref:okn'] !== null ? autolinker.link(String(feature.properties['ref:okn']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['internet_access:ssid'] !== null ? autolinker.link(String(feature.properties['internet_access:ssid']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['disused'] !== null ? autolinker.link(String(feature.properties['disused']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['emergency'] !== null ? autolinker.link(String(feature.properties['emergency']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['official_name:ru'] !== null ? autolinker.link(String(feature.properties['official_name:ru']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['official_name'] !== null ? autolinker.link(String(feature.properties['official_name']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['material'] !== null ? autolinker.link(String(feature.properties['material']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['wikimedia_commons'] !== null ? autolinker.link(String(feature.properties['wikimedia_commons']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['ref'] !== null ? autolinker.link(String(feature.properties['ref']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['roof:orientation'] !== null ? autolinker.link(String(feature.properties['roof:orientation']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['sport'] !== null ? autolinker.link(String(feature.properties['sport']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['leisure'] !== null ? autolinker.link(String(feature.properties['leisure']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['healthcare:speciality'] !== null ? autolinker.link(String(feature.properties['healthcare:speciality']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['office'] !== null ? autolinker.link(String(feature.properties['office']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['roof:height'] !== null ? autolinker.link(String(feature.properties['roof:height']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['outdoor_seating'] !== null ? autolinker.link(String(feature.properties['outdoor_seating']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['cuisine'] !== null ? autolinker.link(String(feature.properties['cuisine']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['contact:website'] !== null ? autolinker.link(String(feature.properties['contact:website']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['contact:phone'] !== null ? autolinker.link(String(feature.properties['contact:phone']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['healthcare'] !== null ? autolinker.link(String(feature.properties['healthcare']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['building:height'] !== null ? autolinker.link(String(feature.properties['building:height']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['power'] !== null ? autolinker.link(String(feature.properties['power']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['building:flats'] !== null ? autolinker.link(String(feature.properties['building:flats']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['building:architecture:series'] !== null ? autolinker.link(String(feature.properties['building:architecture:series']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['building:levels:underground'] !== null ? autolinker.link(String(feature.properties['building:levels:underground']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['addr2:street'] !== null ? autolinker.link(String(feature.properties['addr2:street']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['addr2:housenumber'] !== null ? autolinker.link(String(feature.properties['addr2:housenumber']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['start_date'] !== null ? autolinker.link(String(feature.properties['start_date']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['addr:street2'] !== null ? autolinker.link(String(feature.properties['addr:street2']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['addr:housenumber2'] !== null ? autolinker.link(String(feature.properties['addr:housenumber2']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['alt_name'] !== null ? autolinker.link(String(feature.properties['alt_name']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['tourism'] !== null ? autolinker.link(String(feature.properties['tourism']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['opening_hours'] !== null ? autolinker.link(String(feature.properties['opening_hours']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['museum'] !== null ? autolinker.link(String(feature.properties['museum']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['fee'] !== null ? autolinker.link(String(feature.properties['fee']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['check_date'] !== null ? autolinker.link(String(feature.properties['check_date']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['location'] !== null ? autolinker.link(String(feature.properties['location']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['roof:colour'] !== null ? autolinker.link(String(feature.properties['roof:colour']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['shop'] !== null ? autolinker.link(String(feature.properties['shop']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['brand'] !== null ? autolinker.link(String(feature.properties['brand']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['surveillance'] !== null ? autolinker.link(String(feature.properties['surveillance']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['internet_access'] !== null ? autolinker.link(String(feature.properties['internet_access']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['email'] !== null ? autolinker.link(String(feature.properties['email']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['website'] !== null ? autolinker.link(String(feature.properties['website']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['phone'] !== null ? autolinker.link(String(feature.properties['phone']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['building:material:concrete'] !== null ? autolinker.link(String(feature.properties['building:material:concrete']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['height'] !== null ? autolinker.link(String(feature.properties['height']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['wikipedia'] !== null ? autolinker.link(String(feature.properties['wikipedia']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['wikidata'] !== null ? autolinker.link(String(feature.properties['wikidata']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['roof:shape'] !== null ? autolinker.link(String(feature.properties['roof:shape']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['roof:levels'] !== null ? autolinker.link(String(feature.properties['roof:levels']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['name:ru'] !== null ? autolinker.link(String(feature.properties['name:ru']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['name:en'] !== null ? autolinker.link(String(feature.properties['name:en']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['building:material'] !== null ? autolinker.link(String(feature.properties['building:material']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['addr:country'] !== null ? autolinker.link(String(feature.properties['addr:country']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['building:levels'] !== null ? autolinker.link(String(feature.properties['building:levels']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['type'] !== null ? autolinker.link(String(feature.properties['type']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['name'] !== null ? autolinker.link(String(feature.properties['name']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['loc_name'] !== null ? autolinker.link(String(feature.properties['loc_name']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['layer'] !== null ? autolinker.link(String(feature.properties['layer']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['government'] !== null ? autolinker.link(String(feature.properties['government']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['amenity'] !== null ? autolinker.link(String(feature.properties['amenity']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['addr:street'] !== null ? autolinker.link(String(feature.properties['addr:street']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['addr:postcode'] !== null ? autolinker.link(String(feature.properties['addr:postcode']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['addr:housenumber'] !== null ? autolinker.link(String(feature.properties['addr:housenumber']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['addr:city'] !== null ? autolinker.link(String(feature.properties['addr:city']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['address'] !== null ? autolinker.link(String(feature.properties['address']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_building_2_0() {
+            return {
+                pane: 'pane_building_2',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(232,113,141,1.0)',
+                interactive: true,
+            }
+        }
+        map.createPane('pane_building_2');
+        map.getPane('pane_building_2').style.zIndex = 402;
+        map.getPane('pane_building_2').style['mix-blend-mode'] = 'normal';
+        var layer_building_2 = new L.geoJson(json_building_2, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_building_2',
+            layerName: 'layer_building_2',
+            pane: 'pane_building_2',
+            onEachFeature: pop_building_2,
+            style: style_building_2_0,
+        });
+        bounds_group.addLayer(layer_building_2);
+        map.addLayer(layer_building_2);
+        function pop_highway_3(feature, layer) {
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['fid'] !== null ? autolinker.link(String(feature.properties['fid']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['full_id'] !== null ? autolinker.link(String(feature.properties['full_id']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['osm_id'] !== null ? autolinker.link(String(feature.properties['osm_id']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['osm_type'] !== null ? autolinker.link(String(feature.properties['osm_type']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['highway'] !== null ? autolinker.link(String(feature.properties['highway']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['sidewalk:right:tactile_paving'] !== null ? autolinker.link(String(feature.properties['sidewalk:right:tactile_paving']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['embedded_ramp'] !== null ? autolinker.link(String(feature.properties['embedded_ramp']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['restriction'] !== null ? autolinker.link(String(feature.properties['restriction']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['hour_on'] !== null ? autolinker.link(String(feature.properties['hour_on']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['hour_off'] !== null ? autolinker.link(String(feature.properties['hour_off']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['maxspeed:backward:conditional'] !== null ? autolinker.link(String(feature.properties['maxspeed:backward:conditional']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['cycleway:left'] !== null ? autolinker.link(String(feature.properties['cycleway:left']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['area:highway'] !== null ? autolinker.link(String(feature.properties['area:highway']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['emergency'] !== null ? autolinker.link(String(feature.properties['emergency']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['informal'] !== null ? autolinker.link(String(feature.properties['informal']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['route'] !== null ? autolinker.link(String(feature.properties['route']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['kerb'] !== null ? autolinker.link(String(feature.properties['kerb']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['source:name:date'] !== null ? autolinker.link(String(feature.properties['source:name:date']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['addr:city'] !== null ? autolinker.link(String(feature.properties['addr:city']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['level'] !== null ? autolinker.link(String(feature.properties['level']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['ramp:luggage'] !== null ? autolinker.link(String(feature.properties['ramp:luggage']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['handrail:left'] !== null ? autolinker.link(String(feature.properties['handrail:left']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['operator'] !== null ? autolinker.link(String(feature.properties['operator']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['name:de'] !== null ? autolinker.link(String(feature.properties['name:de']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['loc_name'] !== null ? autolinker.link(String(feature.properties['loc_name']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['maxspeed:forward:conditional'] !== null ? autolinker.link(String(feature.properties['maxspeed:forward:conditional']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['cutline'] !== null ? autolinker.link(String(feature.properties['cutline']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['roller_skiing'] !== null ? autolinker.link(String(feature.properties['roller_skiing']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['roller_ski'] !== null ? autolinker.link(String(feature.properties['roller_ski']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['description:ru'] !== null ? autolinker.link(String(feature.properties['description:ru']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['proposed'] !== null ? autolinker.link(String(feature.properties['proposed']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['piste:type'] !== null ? autolinker.link(String(feature.properties['piste:type']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['piste:grooming'] !== null ? autolinker.link(String(feature.properties['piste:grooming']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['dog'] !== null ? autolinker.link(String(feature.properties['dog']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['intermittent'] !== null ? autolinker.link(String(feature.properties['intermittent']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['ford'] !== null ? autolinker.link(String(feature.properties['ford']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['construction'] !== null ? autolinker.link(String(feature.properties['construction']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['mtb:scale'] !== null ? autolinker.link(String(feature.properties['mtb:scale']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['lit_by_led'] !== null ? autolinker.link(String(feature.properties['lit_by_led']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['abandoned'] !== null ? autolinker.link(String(feature.properties['abandoned']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['check_date'] !== null ? autolinker.link(String(feature.properties['check_date']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['parking:lane:right'] !== null ? autolinker.link(String(feature.properties['parking:lane:right']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['indoor'] !== null ? autolinker.link(String(feature.properties['indoor']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['check_date:ramp'] !== null ? autolinker.link(String(feature.properties['check_date:ramp']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['alt_name:ru'] !== null ? autolinker.link(String(feature.properties['alt_name:ru']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['alt_name:en'] !== null ? autolinker.link(String(feature.properties['alt_name:en']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['alt_name'] !== null ? autolinker.link(String(feature.properties['alt_name']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['traffic_calming'] !== null ? autolinker.link(String(feature.properties['traffic_calming']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['trail_visibility'] !== null ? autolinker.link(String(feature.properties['trail_visibility']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['cycleway:right'] !== null ? autolinker.link(String(feature.properties['cycleway:right']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['area'] !== null ? autolinker.link(String(feature.properties['area']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['material'] !== null ? autolinker.link(String(feature.properties['material']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['ramp:wheelchair'] !== null ? autolinker.link(String(feature.properties['ramp:wheelchair']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['sport'] !== null ? autolinker.link(String(feature.properties['sport']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['man_made'] !== null ? autolinker.link(String(feature.properties['man_made']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['stroller'] !== null ? autolinker.link(String(feature.properties['stroller']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['segregated'] !== null ? autolinker.link(String(feature.properties['segregated']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['footway:surface'] !== null ? autolinker.link(String(feature.properties['footway:surface']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['cycleway:surface'] !== null ? autolinker.link(String(feature.properties['cycleway:surface']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['motorcar'] !== null ? autolinker.link(String(feature.properties['motorcar']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['sidewalk:left:tactile_paving'] !== null ? autolinker.link(String(feature.properties['sidewalk:left:tactile_paving']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['cutting'] !== null ? autolinker.link(String(feature.properties['cutting']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['psv'] !== null ? autolinker.link(String(feature.properties['psv']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['snowmobile'] !== null ? autolinker.link(String(feature.properties['snowmobile']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['ski'] !== null ? autolinker.link(String(feature.properties['ski']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['check_date:surface'] !== null ? autolinker.link(String(feature.properties['check_date:surface']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['embankment'] !== null ? autolinker.link(String(feature.properties['embankment']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['was:highway'] !== null ? autolinker.link(String(feature.properties['was:highway']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['surface:note'] !== null ? autolinker.link(String(feature.properties['surface:note']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['maxweight'] !== null ? autolinker.link(String(feature.properties['maxweight']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['tunnel'] !== null ? autolinker.link(String(feature.properties['tunnel']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['maxweight:signed'] !== null ? autolinker.link(String(feature.properties['maxweight:signed']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['comment'] !== null ? autolinker.link(String(feature.properties['comment']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['covered'] !== null ? autolinker.link(String(feature.properties['covered']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['official_name'] !== null ? autolinker.link(String(feature.properties['official_name']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['traffic_signals:sound'] !== null ? autolinker.link(String(feature.properties['traffic_signals:sound']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['traffic_signals:vibration'] !== null ? autolinker.link(String(feature.properties['traffic_signals:vibration']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['button_operated'] !== null ? autolinker.link(String(feature.properties['button_operated']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['noname'] !== null ? autolinker.link(String(feature.properties['noname']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['old_name:en'] !== null ? autolinker.link(String(feature.properties['old_name:en']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['parking:lane:both'] !== null ? autolinker.link(String(feature.properties['parking:lane:both']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['carriage'] !== null ? autolinker.link(String(feature.properties['carriage']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['living_street'] !== null ? autolinker.link(String(feature.properties['living_street']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['image'] !== null ? autolinker.link(String(feature.properties['image']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['flood_prone'] !== null ? autolinker.link(String(feature.properties['flood_prone']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['horse'] !== null ? autolinker.link(String(feature.properties['horse']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['maxheight'] !== null ? autolinker.link(String(feature.properties['maxheight']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['note:en'] !== null ? autolinker.link(String(feature.properties['note:en']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['description:en'] !== null ? autolinker.link(String(feature.properties['description:en']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['busway'] !== null ? autolinker.link(String(feature.properties['busway']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['lanes:bus:backward'] !== null ? autolinker.link(String(feature.properties['lanes:bus:backward']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['description'] !== null ? autolinker.link(String(feature.properties['description']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['lit:perceived'] !== null ? autolinker.link(String(feature.properties['lit:perceived']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['step_count'] !== null ? autolinker.link(String(feature.properties['step_count']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['sorting_name'] !== null ? autolinker.link(String(feature.properties['sorting_name']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['wheelchair'] !== null ? autolinker.link(String(feature.properties['wheelchair']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['ramp:stroller'] !== null ? autolinker.link(String(feature.properties['ramp:stroller']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['ramp:bicycle'] !== null ? autolinker.link(String(feature.properties['ramp:bicycle']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['maxspeed:rushhour'] !== null ? autolinker.link(String(feature.properties['maxspeed:rushhour']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['overtaking'] !== null ? autolinker.link(String(feature.properties['overtaking']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['maxspeed:practical'] !== null ? autolinker.link(String(feature.properties['maxspeed:practical']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['footway'] !== null ? autolinker.link(String(feature.properties['footway']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['crossing:markings'] !== null ? autolinker.link(String(feature.properties['crossing:markings']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['crossing:island'] !== null ? autolinker.link(String(feature.properties['crossing:island']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['crossing'] !== null ? autolinker.link(String(feature.properties['crossing']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['boundary'] !== null ? autolinker.link(String(feature.properties['boundary']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['admin_level'] !== null ? autolinker.link(String(feature.properties['admin_level']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['source:maxspeed:forward'] !== null ? autolinker.link(String(feature.properties['source:maxspeed:forward']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['name:uk'] !== null ? autolinker.link(String(feature.properties['name:uk']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['service'] !== null ? autolinker.link(String(feature.properties['service']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['name:an'] !== null ? autolinker.link(String(feature.properties['name:an']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['junction'] !== null ? autolinker.link(String(feature.properties['junction']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['source:access:conditional'] !== null ? autolinker.link(String(feature.properties['source:access:conditional']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['maxspeed:advisory'] !== null ? autolinker.link(String(feature.properties['maxspeed:advisory']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['layer'] !== null ? autolinker.link(String(feature.properties['layer']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['hgv'] !== null ? autolinker.link(String(feature.properties['hgv']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['bridge'] !== null ? autolinker.link(String(feature.properties['bridge']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['access:conditional'] !== null ? autolinker.link(String(feature.properties['access:conditional']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['foot'] !== null ? autolinker.link(String(feature.properties['foot']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['destination'] !== null ? autolinker.link(String(feature.properties['destination']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['tactile_paving'] !== null ? autolinker.link(String(feature.properties['tactile_paving']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['ramp'] !== null ? autolinker.link(String(feature.properties['ramp']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['handrail'] !== null ? autolinker.link(String(feature.properties['handrail']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['turn:lanes'] !== null ? autolinker.link(String(feature.properties['turn:lanes']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['lane_markings'] !== null ? autolinker.link(String(feature.properties['lane_markings']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['maxspeed:conditional'] !== null ? autolinker.link(String(feature.properties['maxspeed:conditional']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['width'] !== null ? autolinker.link(String(feature.properties['width']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['vehicle'] !== null ? autolinker.link(String(feature.properties['vehicle']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['motor_vehicle'] !== null ? autolinker.link(String(feature.properties['motor_vehicle']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['parking:condition:right:time_interval'] !== null ? autolinker.link(String(feature.properties['parking:condition:right:time_interval']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['parking:condition:both'] !== null ? autolinker.link(String(feature.properties['parking:condition:both']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['int_name'] !== null ? autolinker.link(String(feature.properties['int_name']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['source:highway:category'] !== null ? autolinker.link(String(feature.properties['source:highway:category']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['ref'] !== null ? autolinker.link(String(feature.properties['ref']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['old_ref'] !== null ? autolinker.link(String(feature.properties['old_ref']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['highway:category'] !== null ? autolinker.link(String(feature.properties['highway:category']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['tracktype'] !== null ? autolinker.link(String(feature.properties['tracktype']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['old_name:ru'] !== null ? autolinker.link(String(feature.properties['old_name:ru']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['old_name'] !== null ? autolinker.link(String(feature.properties['old_name']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['incline'] !== null ? autolinker.link(String(feature.properties['incline']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['maxspeed:type'] !== null ? autolinker.link(String(feature.properties['maxspeed:type']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['source:maxspeed:backward'] !== null ? autolinker.link(String(feature.properties['source:maxspeed:backward']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['sidewalk:both'] !== null ? autolinker.link(String(feature.properties['sidewalk:both']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['maxspeed:forward'] !== null ? autolinker.link(String(feature.properties['maxspeed:forward']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['maxspeed:backward'] !== null ? autolinker.link(String(feature.properties['maxspeed:backward']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['sidewalk:right'] !== null ? autolinker.link(String(feature.properties['sidewalk:right']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['sidewalk:left'] !== null ? autolinker.link(String(feature.properties['sidewalk:left']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['shoulder'] !== null ? autolinker.link(String(feature.properties['shoulder']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['wikipedia'] !== null ? autolinker.link(String(feature.properties['wikipedia']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['wikidata'] !== null ? autolinker.link(String(feature.properties['wikidata']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['smoothness'] !== null ? autolinker.link(String(feature.properties['smoothness']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['postal_code'] !== null ? autolinker.link(String(feature.properties['postal_code']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['addr:postcode'] !== null ? autolinker.link(String(feature.properties['addr:postcode']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['turn:lanes:backward'] !== null ? autolinker.link(String(feature.properties['turn:lanes:backward']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['source:maxspeed'] !== null ? autolinker.link(String(feature.properties['source:maxspeed']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['name:zh'] !== null ? autolinker.link(String(feature.properties['name:zh']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['name:eo'] !== null ? autolinker.link(String(feature.properties['name:eo']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['lanes:forward'] !== null ? autolinker.link(String(feature.properties['lanes:forward']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['lanes:backward'] !== null ? autolinker.link(String(feature.properties['lanes:backward']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['turn:lanes:forward'] !== null ? autolinker.link(String(feature.properties['turn:lanes:forward']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['trolley_wire'] !== null ? autolinker.link(String(feature.properties['trolley_wire']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['surface'] !== null ? autolinker.link(String(feature.properties['surface']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['sidewalk'] !== null ? autolinker.link(String(feature.properties['sidewalk']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['oneway'] !== null ? autolinker.link(String(feature.properties['oneway']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['name:ru'] !== null ? autolinker.link(String(feature.properties['name:ru']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['name:etymology:wikidata'] !== null ? autolinker.link(String(feature.properties['name:etymology:wikidata']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['name:en'] !== null ? autolinker.link(String(feature.properties['name:en']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['name'] !== null ? autolinker.link(String(feature.properties['name']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['motorcycle'] !== null ? autolinker.link(String(feature.properties['motorcycle']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['maxspeed'] !== null ? autolinker.link(String(feature.properties['maxspeed']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['lit'] !== null ? autolinker.link(String(feature.properties['lit']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['lanes'] !== null ? autolinker.link(String(feature.properties['lanes']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['cycleway'] !== null ? autolinker.link(String(feature.properties['cycleway']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['bicycle'] !== null ? autolinker.link(String(feature.properties['bicycle']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['access'] !== null ? autolinker.link(String(feature.properties['access']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_highway_3_0() {
+            return {
+                pane: 'pane_highway_3',
+                opacity: 1,
+                color: 'rgba(231,113,72,1.0)',
+                dashArray: '',
+                lineCap: 'square',
+                lineJoin: 'bevel',
+                weight: 1.0,
+                fillOpacity: 0,
+                interactive: true,
+            }
+        }
+        map.createPane('pane_highway_3');
+        map.getPane('pane_highway_3').style.zIndex = 403;
+        map.getPane('pane_highway_3').style['mix-blend-mode'] = 'normal';
+        var layer_highway_3 = new L.geoJson(json_highway_3, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_highway_3',
+            layerName: 'layer_highway_3',
+            pane: 'pane_highway_3',
+            onEachFeature: pop_highway_3,
+            style: style_highway_3_0,
+        });
+        bounds_group.addLayer(layer_highway_3);
+        map.addLayer(layer_highway_3);
+        var osmGeocoder = new L.Control.Geocoder({
+            collapsed: true,
+            position: 'topleft',
+            text: 'Search',
+            title: 'Testing'
+        }).addTo(map);
+        document.getElementsByClassName('leaflet-control-geocoder-icon')[0]
+        .className += ' fa fa-search';
+        document.getElementsByClassName('leaflet-control-geocoder-icon')[0]
+        .title += 'Search for a place';
+        var overlaysTree = [
+            {label: '<img src="legend/highway_3.png" /> highway', layer: layer_highway_3},
+            {label: '<img src="legend/building_2.png" /> building', layer: layer_building_2},
+            {label: "OSM Standard", layer: layer_OSMStandard_1},
+            {label: "Yandex Satellite", layer: layer_YandexSatellite_0},]
+        var lay = L.control.layers.tree(null, overlaysTree,{
+            //namedToggle: true,
+            //selectorBack: false,
+            //closedSymbol: '&#8862; &#x1f5c0;',
+            //openedSymbol: '&#8863; &#x1f5c1;',
+            //collapseAll: 'Collapse all',
+            //expandAll: 'Expand all',
+            collapsed: true,
+        });
+        lay.addTo(map);
+        setBounds();
+        map.addControl(new L.Control.Search({
+            layer: layer_building_2,
+            initial: false,
+            hideMarkerOnCollapse: true,
+            propertyName: 'address'}));
+        document.getElementsByClassName('search-button')[0].className +=
+         ' fa fa-binoculars';
+        var mapDiv = document.getElementById('map');
+        var row = document.createElement('div');
+        row.className="row";
+        row.id="all";
+        row.style.height = "100%";
+        var col1 = document.createElement('div');
+        col1.className="col9";
+        col1.id = "mapWindow";
+        col1.style.height = "99%";
+        col1.style.width = "80%";
+        col1.style.display = "inline-block";
+        var col2 = document.createElement('div');
+        col2.className="col3";
+        col2.id = "menu";
+        col2.style.display = "inline-block";
+        mapDiv.parentNode.insertBefore(row, mapDiv);
+        document.getElementById("all").appendChild(col1);
+        document.getElementById("all").appendChild(col2);
+        col1.appendChild(mapDiv)
+        var Filters = {"address": "str"};
+        function filterFunc() {
+          map.eachLayer(function(lyr){
+          if ("options" in lyr && "dataVar" in lyr["options"]){
+            features = this[lyr["options"]["dataVar"]].features.slice(0);
+            try{
+              for (key in Filters){
+                keyS = key.replace(/[^a-zA-Z0-9_]/g, "")
+                if (Filters[key] == "str" || Filters[key] == "bool"){
+                  var selection = [];
+                  var options = document.getElementById("sel_" + keyS).options
+                  for (var i=0; i < options.length; i++) {
+                    if (options[i].selected) selection.push(options[i].value);
+                  }
+                    try{
+                      if (key in features[0].properties){
+                        for (i = features.length - 1;
+                          i >= 0; --i){
+                          if (selection.indexOf(
+                          features[i].properties[key])<0
+                          && selection.length>0) {
+                          features.splice(i,1);
+                          }
+                        }
+                      }
+                    } catch(err){
+                  }
+                }
+                if (Filters[key] == "int"){
+                  sliderVals =  document.getElementById(
+                    "div_" + keyS).noUiSlider.get();
+                  try{
+                    if (key in features[0].properties){
+                    for (i = features.length - 1; i >= 0; --i){
+                      if (parseInt(features[i].properties[key])
+                          < sliderVals[0]
+                          || parseInt(features[i].properties[key])
+                          > sliderVals[1]){
+                            features.splice(i,1);
+                          }
+                        }
+                      }
+                    } catch(err){
+                    }
+                  }
+                if (Filters[key] == "real"){
+                  sliderVals =  document.getElementById(
+                    "div_" + keyS).noUiSlider.get();
+                  try{
+                    if (key in features[0].properties){
+                    for (i = features.length - 1; i >= 0; --i){
+                      if (features[i].properties[key]
+                          < sliderVals[0]
+                          || features[i].properties[key]
+                          > sliderVals[1]){
+                            features.splice(i,1);
+                          }
+                        }
+                      }
+                    } catch(err){
+                    }
+                  }
+                if (Filters[key] == "date"
+                  || Filters[key] == "datetime"
+                  || Filters[key] == "time"){
+                  try{
+                    if (key in features[0].properties){
+                      HTMLkey = key.replace(/[&\/\\#,+()$~%.'":*?<>{} ]/g, '');
+                      startdate = document.getElementById("dat_" +
+                        HTMLkey + "_date1").value.replace(" ", "T");
+                      enddate = document.getElementById("dat_" +
+                        HTMLkey + "_date2").value.replace(" ", "T");
+                      for (i = features.length - 1; i >= 0; --i){
+                        if (features[i].properties[key] < startdate
+                          || features[i].properties[key] > enddate){
+                          features.splice(i,1);
+                        }
+                      }
+                    }
+                  } catch(err){
+                  }
+                }
+              }
+            } catch(err){
+            }
+          this[lyr["options"]["layerName"]].clearLayers();
+          this[lyr["options"]["layerName"]].addData(features);
+          }
+          })
+        }
+            document.getElementById("menu").appendChild(
+                document.createElement("div"));
+            var div_address = document.createElement('div');
+            div_address.id = "div_address";
+            div_address.className= "filterselect";
+            document.getElementById("menu").appendChild(div_address);
+            sel_address = document.createElement('select');
+            sel_address.multiple = true;
+            sel_address.size = 10;
+            sel_address.id = "sel_address";
+            var address_options_str = "<option value='' unselected></option>";
+            sel_address.onchange = function(){filterFunc()};
+            address_options_str  += '<option value=" "> </option>';
+            address_options_str  += '<option value="Ачинская улица 10">Ачинская улица 10</option>';
+            address_options_str  += '<option value="Ачинская улица 2">Ачинская улица 2</option>';
+            address_options_str  += '<option value="Ачинская улица 4">Ачинская улица 4</option>';
+            address_options_str  += '<option value="Ачинская улица 6">Ачинская улица 6</option>';
+            address_options_str  += '<option value="Ачинская улица 8">Ачинская улица 8</option>';
+            address_options_str  += '<option value="Белая улица 20">Белая улица 20</option>';
+            address_options_str  += '<option value="Белая улица 20Б">Белая улица 20Б</option>';
+            address_options_str  += '<option value="Болотный переулок 11">Болотный переулок 11</option>';
+            address_options_str  += '<option value="Болотный переулок 8">Болотный переулок 8</option>';
+            address_options_str  += '<option value="Больничный переулок 11">Больничный переулок 11</option>';
+            address_options_str  += '<option value="Больничный переулок 12А">Больничный переулок 12А</option>';
+            address_options_str  += '<option value="Больничный переулок 13">Больничный переулок 13</option>';
+            address_options_str  += '<option value="Больничный переулок 15">Больничный переулок 15</option>';
+            address_options_str  += '<option value="Больничный переулок 17">Больничный переулок 17</option>';
+            address_options_str  += '<option value="Больничный переулок 2А">Больничный переулок 2А</option>';
+            address_options_str  += '<option value="Больничный переулок 4">Больничный переулок 4</option>';
+            address_options_str  += '<option value="Больничный переулок 9">Больничный переулок 9</option>';
+            address_options_str  += '<option value="Войлочная заимка 10">Войлочная заимка 10</option>';
+            address_options_str  += '<option value="Войлочная заимка 11">Войлочная заимка 11</option>';
+            address_options_str  += '<option value="Войлочная заимка 13">Войлочная заимка 13</option>';
+            address_options_str  += '<option value="Войлочная заимка 14">Войлочная заимка 14</option>';
+            address_options_str  += '<option value="Войлочная заимка 15">Войлочная заимка 15</option>';
+            address_options_str  += '<option value="Войлочная заимка 16">Войлочная заимка 16</option>';
+            address_options_str  += '<option value="Войлочная заимка 16/1">Войлочная заимка 16/1</option>';
+            address_options_str  += '<option value="Войлочная заимка 18">Войлочная заимка 18</option>';
+            address_options_str  += '<option value="Войлочная заимка 19">Войлочная заимка 19</option>';
+            address_options_str  += '<option value="Войлочная заимка 2">Войлочная заимка 2</option>';
+            address_options_str  += '<option value="Войлочная заимка 20">Войлочная заимка 20</option>';
+            address_options_str  += '<option value="Войлочная заимка 21">Войлочная заимка 21</option>';
+            address_options_str  += '<option value="Войлочная заимка 22">Войлочная заимка 22</option>';
+            address_options_str  += '<option value="Войлочная заимка 23">Войлочная заимка 23</option>';
+            address_options_str  += '<option value="Войлочная заимка 24">Войлочная заимка 24</option>';
+            address_options_str  += '<option value="Войлочная заимка 25">Войлочная заимка 25</option>';
+            address_options_str  += '<option value="Войлочная заимка 26">Войлочная заимка 26</option>';
+            address_options_str  += '<option value="Войлочная заимка 3">Войлочная заимка 3</option>';
+            address_options_str  += '<option value="Войлочная заимка 4">Войлочная заимка 4</option>';
+            address_options_str  += '<option value="Войлочная заимка 5">Войлочная заимка 5</option>';
+            address_options_str  += '<option value="Войлочная заимка 6">Войлочная заимка 6</option>';
+            address_options_str  += '<option value="Войлочная заимка 7">Войлочная заимка 7</option>';
+            address_options_str  += '<option value="Войлочная заимка 8">Войлочная заимка 8</option>';
+            address_options_str  += '<option value="Войлочная заимка 9">Войлочная заимка 9</option>';
+            address_options_str  += '<option value="Войлочная заимка 9/1">Войлочная заимка 9/1</option>';
+            address_options_str  += '<option value="Войлочная улица 10">Войлочная улица 10</option>';
+            address_options_str  += '<option value="Войлочная улица 12">Войлочная улица 12</option>';
+            address_options_str  += '<option value="Войлочная улица 14">Войлочная улица 14</option>';
+            address_options_str  += '<option value="Войлочная улица 16">Войлочная улица 16</option>';
+            address_options_str  += '<option value="Войлочная улица 18">Войлочная улица 18</option>';
+            address_options_str  += '<option value="Войлочная улица 18/1">Войлочная улица 18/1</option>';
+            address_options_str  += '<option value="Войлочная улица 20">Войлочная улица 20</option>';
+            address_options_str  += '<option value="Войлочная улица 22">Войлочная улица 22</option>';
+            address_options_str  += '<option value="Войлочная улица 4А">Войлочная улица 4А</option>';
+            address_options_str  += '<option value="Войлочная улица 4А с1">Войлочная улица 4А с1</option>';
+            address_options_str  += '<option value="Войлочная улица 6">Войлочная улица 6</option>';
+            address_options_str  += '<option value="Войлочная улица 8">Войлочная улица 8</option>';
+            address_options_str  += '<option value="Горшковский переулок 11А">Горшковский переулок 11А</option>';
+            address_options_str  += '<option value="Горшковский переулок 13">Горшковский переулок 13</option>';
+            address_options_str  += '<option value="Горшковский переулок 15А">Горшковский переулок 15А</option>';
+            address_options_str  += '<option value="Горшковский переулок 17">Горшковский переулок 17</option>';
+            address_options_str  += '<option value="Горшковский переулок 19">Горшковский переулок 19</option>';
+            address_options_str  += '<option value="Горшковский переулок 20">Горшковский переулок 20</option>';
+            address_options_str  += '<option value="Горшковский переулок 21">Горшковский переулок 21</option>';
+            address_options_str  += '<option value="Горшковский переулок 22">Горшковский переулок 22</option>';
+            address_options_str  += '<option value="Горшковский переулок 24">Горшковский переулок 24</option>';
+            address_options_str  += '<option value="Горшковский переулок 26">Горшковский переулок 26</option>';
+            address_options_str  += '<option value="Горшковский переулок 30">Горшковский переулок 30</option>';
+            address_options_str  += '<option value="Загорная улица ">Загорная улица </option>';
+            address_options_str  += '<option value="Загорная улица 45">Загорная улица 45</option>';
+            address_options_str  += '<option value="Загорная улица 48">Загорная улица 48</option>';
+            address_options_str  += '<option value="Загорная улица 50">Загорная улица 50</option>';
+            address_options_str  += '<option value="Загорная улица 51">Загорная улица 51</option>';
+            address_options_str  += '<option value="Загорная улица 52">Загорная улица 52</option>';
+            address_options_str  += '<option value="Загорная улица 53">Загорная улица 53</option>';
+            address_options_str  += '<option value="Загорная улица 54">Загорная улица 54</option>';
+            address_options_str  += '<option value="Загорная улица 56">Загорная улица 56</option>';
+            address_options_str  += '<option value="Загорная улица 57">Загорная улица 57</option>';
+            address_options_str  += '<option value="Загорная улица 58">Загорная улица 58</option>';
+            address_options_str  += '<option value="Загорная улица 60">Загорная улица 60</option>';
+            address_options_str  += '<option value="Загорная улица 62">Загорная улица 62</option>';
+            address_options_str  += '<option value="Загорная улица 64">Загорная улица 64</option>';
+            address_options_str  += '<option value="Загорная улица 66">Загорная улица 66</option>';
+            address_options_str  += '<option value="Загорная улица 70">Загорная улица 70</option>';
+            address_options_str  += '<option value="Загорная улица 70А">Загорная улица 70А</option>';
+            address_options_str  += '<option value="Загорная улица 74А">Загорная улица 74А</option>';
+            address_options_str  += '<option value="Загорная улица 74Б">Загорная улица 74Б</option>';
+            address_options_str  += '<option value="Загорная улица 74а/5">Загорная улица 74а/5</option>';
+            address_options_str  += '<option value="Ключевской проезд 10">Ключевской проезд 10</option>';
+            address_options_str  += '<option value="Ключевской проезд 11">Ключевской проезд 11</option>';
+            address_options_str  += '<option value="Ключевской проезд 12">Ключевской проезд 12</option>';
+            address_options_str  += '<option value="Ключевской проезд 13">Ключевской проезд 13</option>';
+            address_options_str  += '<option value="Ключевской проезд 14">Ключевской проезд 14</option>';
+            address_options_str  += '<option value="Ключевской проезд 16">Ключевской проезд 16</option>';
+            address_options_str  += '<option value="Ключевской проезд 17">Ключевской проезд 17</option>';
+            address_options_str  += '<option value="Ключевской проезд 18">Ключевской проезд 18</option>';
+            address_options_str  += '<option value="Ключевской проезд 19">Ключевской проезд 19</option>';
+            address_options_str  += '<option value="Ключевской проезд 20">Ключевской проезд 20</option>';
+            address_options_str  += '<option value="Ключевской проезд 3">Ключевской проезд 3</option>';
+            address_options_str  += '<option value="Ключевской проезд 3А">Ключевской проезд 3А</option>';
+            address_options_str  += '<option value="Ключевской проезд 4">Ключевской проезд 4</option>';
+            address_options_str  += '<option value="Ключевской проезд 5">Ключевской проезд 5</option>';
+            address_options_str  += '<option value="Ключевской проезд 6">Ключевской проезд 6</option>';
+            address_options_str  += '<option value="Ключевской проезд 7">Ключевской проезд 7</option>';
+            address_options_str  += '<option value="Ключевской проезд 8">Ключевской проезд 8</option>';
+            address_options_str  += '<option value="Ключевской проезд 9">Ключевской проезд 9</option>';
+            address_options_str  += '<option value="Ключевской проезд 9/11">Ключевской проезд 9/11</option>';
+            address_options_str  += '<option value="Ключевской проезд 9/2">Ключевской проезд 9/2</option>';
+            address_options_str  += '<option value="Крестьянский переулок 4">Крестьянский переулок 4</option>';
+            address_options_str  += '<option value="Крестьянский переулок 5">Крестьянский переулок 5</option>';
+            address_options_str  += '<option value="Крестьянский переулок 6">Крестьянский переулок 6</option>';
+            address_options_str  += '<option value="Крестьянский переулок 8">Крестьянский переулок 8</option>';
+            address_options_str  += '<option value="Мало-Кирпичный переулок 17">Мало-Кирпичный переулок 17</option>';
+            address_options_str  += '<option value="Мало-Кирпичный переулок 4/1">Мало-Кирпичный переулок 4/1</option>';
+            address_options_str  += '<option value="Нагорный переулок 10">Нагорный переулок 10</option>';
+            address_options_str  += '<option value="Нагорный переулок 12">Нагорный переулок 12</option>';
+            address_options_str  += '<option value="Нагорный переулок 3">Нагорный переулок 3</option>';
+            address_options_str  += '<option value="Нагорный переулок 4">Нагорный переулок 4</option>';
+            address_options_str  += '<option value="Нагорный переулок 5">Нагорный переулок 5</option>';
+            address_options_str  += '<option value="Нагорный переулок 6">Нагорный переулок 6</option>';
+            address_options_str  += '<option value="Нагорный переулок 7">Нагорный переулок 7</option>';
+            address_options_str  += '<option value="Нагорный переулок 8">Нагорный переулок 8</option>';
+            address_options_str  += '<option value="Ново-Ачинская улица 10">Ново-Ачинская улица 10</option>';
+            address_options_str  += '<option value="Ново-Ачинская улица 11">Ново-Ачинская улица 11</option>';
+            address_options_str  += '<option value="Ново-Ачинская улица 12">Ново-Ачинская улица 12</option>';
+            address_options_str  += '<option value="Ново-Ачинская улица 13">Ново-Ачинская улица 13</option>';
+            address_options_str  += '<option value="Ново-Ачинская улица 13А">Ново-Ачинская улица 13А</option>';
+            address_options_str  += '<option value="Ново-Ачинская улица 13Б">Ново-Ачинская улица 13Б</option>';
+            address_options_str  += '<option value="Ново-Ачинская улица 14">Ново-Ачинская улица 14</option>';
+            address_options_str  += '<option value="Ново-Ачинская улица 14Б">Ново-Ачинская улица 14Б</option>';
+            address_options_str  += '<option value="Ново-Ачинская улица 15">Ново-Ачинская улица 15</option>';
+            address_options_str  += '<option value="Ново-Ачинская улица 16">Ново-Ачинская улица 16</option>';
+            address_options_str  += '<option value="Ново-Ачинская улица 17">Ново-Ачинская улица 17</option>';
+            address_options_str  += '<option value="Ново-Ачинская улица 20А">Ново-Ачинская улица 20А</option>';
+            address_options_str  += '<option value="Ново-Ачинская улица 2А">Ново-Ачинская улица 2А</option>';
+            address_options_str  += '<option value="Ново-Ачинская улица 3">Ново-Ачинская улица 3</option>';
+            address_options_str  += '<option value="Ново-Ачинская улица 4">Ново-Ачинская улица 4</option>';
+            address_options_str  += '<option value="Ново-Ачинская улица 4Б">Ново-Ачинская улица 4Б</option>';
+            address_options_str  += '<option value="Ново-Ачинская улица 5">Ново-Ачинская улица 5</option>';
+            address_options_str  += '<option value="Ново-Ачинская улица 6">Ново-Ачинская улица 6</option>';
+            address_options_str  += '<option value="Ново-Ачинская улица 7">Ново-Ачинская улица 7</option>';
+            address_options_str  += '<option value="Ново-Ачинская улица 7А">Ново-Ачинская улица 7А</option>';
+            address_options_str  += '<option value="Ново-Ачинская улица 7Б">Ново-Ачинская улица 7Б</option>';
+            address_options_str  += '<option value="Ново-Ачинская улица 8">Ново-Ачинская улица 8</option>';
+            address_options_str  += '<option value="Октябрьская улица 12">Октябрьская улица 12</option>';
+            address_options_str  += '<option value="Октябрьская улица 14">Октябрьская улица 14</option>';
+            address_options_str  += '<option value="Октябрьская улица 15">Октябрьская улица 15</option>';
+            address_options_str  += '<option value="Октябрьская улица 15/1">Октябрьская улица 15/1</option>';
+            address_options_str  += '<option value="Октябрьская улица 16А">Октябрьская улица 16А</option>';
+            address_options_str  += '<option value="Октябрьская улица 16Б">Октябрьская улица 16Б</option>';
+            address_options_str  += '<option value="Октябрьская улица 17">Октябрьская улица 17</option>';
+            address_options_str  += '<option value="Октябрьская улица 17/1">Октябрьская улица 17/1</option>';
+            address_options_str  += '<option value="Октябрьская улица 18">Октябрьская улица 18</option>';
+            address_options_str  += '<option value="Октябрьская улица 19">Октябрьская улица 19</option>';
+            address_options_str  += '<option value="Октябрьская улица 19/1">Октябрьская улица 19/1</option>';
+            address_options_str  += '<option value="Октябрьская улица 20">Октябрьская улица 20</option>';
+            address_options_str  += '<option value="Октябрьская улица 21">Октябрьская улица 21</option>';
+            address_options_str  += '<option value="Октябрьская улица 22">Октябрьская улица 22</option>';
+            address_options_str  += '<option value="Октябрьская улица 22/1">Октябрьская улица 22/1</option>';
+            address_options_str  += '<option value="Октябрьская улица 23">Октябрьская улица 23</option>';
+            address_options_str  += '<option value="Октябрьская улица 24">Октябрьская улица 24</option>';
+            address_options_str  += '<option value="Октябрьская улица 25">Октябрьская улица 25</option>';
+            address_options_str  += '<option value="Октябрьская улица 26">Октябрьская улица 26</option>';
+            address_options_str  += '<option value="Октябрьская улица 27">Октябрьская улица 27</option>';
+            address_options_str  += '<option value="Октябрьская улица 28">Октябрьская улица 28</option>';
+            address_options_str  += '<option value="Октябрьская улица 28А">Октябрьская улица 28А</option>';
+            address_options_str  += '<option value="Октябрьская улица 29">Октябрьская улица 29</option>';
+            address_options_str  += '<option value="Октябрьская улица 29/1">Октябрьская улица 29/1</option>';
+            address_options_str  += '<option value="Октябрьская улица 30">Октябрьская улица 30</option>';
+            address_options_str  += '<option value="Октябрьская улица 31">Октябрьская улица 31</option>';
+            address_options_str  += '<option value="Октябрьская улица 32">Октябрьская улица 32</option>';
+            address_options_str  += '<option value="Октябрьская улица 32А">Октябрьская улица 32А</option>';
+            address_options_str  += '<option value="Октябрьская улица 33">Октябрьская улица 33</option>';
+            address_options_str  += '<option value="Октябрьская улица 34">Октябрьская улица 34</option>';
+            address_options_str  += '<option value="Октябрьская улица 35">Октябрьская улица 35</option>';
+            address_options_str  += '<option value="Октябрьская улица 36">Октябрьская улица 36</option>';
+            address_options_str  += '<option value="Октябрьская улица 37">Октябрьская улица 37</option>';
+            address_options_str  += '<option value="Октябрьская улица 38">Октябрьская улица 38</option>';
+            address_options_str  += '<option value="Октябрьская улица 39">Октябрьская улица 39</option>';
+            address_options_str  += '<option value="Октябрьская улица 39/1">Октябрьская улица 39/1</option>';
+            address_options_str  += '<option value="Октябрьская улица 40">Октябрьская улица 40</option>';
+            address_options_str  += '<option value="Октябрьская улица 41">Октябрьская улица 41</option>';
+            address_options_str  += '<option value="Октябрьская улица 42">Октябрьская улица 42</option>';
+            address_options_str  += '<option value="Октябрьская улица 43">Октябрьская улица 43</option>';
+            address_options_str  += '<option value="Октябрьская улица 43/1">Октябрьская улица 43/1</option>';
+            address_options_str  += '<option value="Октябрьская улица 43/2">Октябрьская улица 43/2</option>';
+            address_options_str  += '<option value="Октябрьская улица 43/3">Октябрьская улица 43/3</option>';
+            address_options_str  += '<option value="Октябрьская улица 43/4">Октябрьская улица 43/4</option>';
+            address_options_str  += '<option value="Октябрьская улица 44">Октябрьская улица 44</option>';
+            address_options_str  += '<option value="Октябрьская улица 45">Октябрьская улица 45</option>';
+            address_options_str  += '<option value="Октябрьская улица 46">Октябрьская улица 46</option>';
+            address_options_str  += '<option value="Октябрьская улица 47">Октябрьская улица 47</option>';
+            address_options_str  += '<option value="Октябрьская улица 48">Октябрьская улица 48</option>';
+            address_options_str  += '<option value="Октябрьская улица 49">Октябрьская улица 49</option>';
+            address_options_str  += '<option value="Октябрьская улица 50">Октябрьская улица 50</option>';
+            address_options_str  += '<option value="Октябрьская улица 51">Октябрьская улица 51</option>';
+            address_options_str  += '<option value="Октябрьская улица 51А">Октябрьская улица 51А</option>';
+            address_options_str  += '<option value="Октябрьская улица 52">Октябрьская улица 52</option>';
+            address_options_str  += '<option value="Октябрьская улица 53">Октябрьская улица 53</option>';
+            address_options_str  += '<option value="Октябрьская улица 54">Октябрьская улица 54</option>';
+            address_options_str  += '<option value="Октябрьская улица 54/1">Октябрьская улица 54/1</option>';
+            address_options_str  += '<option value="Октябрьская улица 55">Октябрьская улица 55</option>';
+            address_options_str  += '<option value="Октябрьская улица 55А">Октябрьская улица 55А</option>';
+            address_options_str  += '<option value="Октябрьская улица 56">Октябрьская улица 56</option>';
+            address_options_str  += '<option value="Октябрьская улица 57">Октябрьская улица 57</option>';
+            address_options_str  += '<option value="Октябрьская улица 58">Октябрьская улица 58</option>';
+            address_options_str  += '<option value="Октябрьская улица 58 с1">Октябрьская улица 58 с1</option>';
+            address_options_str  += '<option value="Октябрьская улица 59">Октябрьская улица 59</option>';
+            address_options_str  += '<option value="Октябрьская улица 60">Октябрьская улица 60</option>';
+            address_options_str  += '<option value="Октябрьская улица 61">Октябрьская улица 61</option>';
+            address_options_str  += '<option value="Октябрьская улица 62">Октябрьская улица 62</option>';
+            address_options_str  += '<option value="Октябрьская улица 65">Октябрьская улица 65</option>';
+            address_options_str  += '<option value="Октябрьская улица 65А">Октябрьская улица 65А</option>';
+            address_options_str  += '<option value="Октябрьская улица 67">Октябрьская улица 67</option>';
+            address_options_str  += '<option value="Октябрьская улица 69А">Октябрьская улица 69А</option>';
+            address_options_str  += '<option value="Октябрьская улица 71">Октябрьская улица 71</option>';
+            address_options_str  += '<option value="Октябрьская улица 73">Октябрьская улица 73</option>';
+            address_options_str  += '<option value="Октябрьская улица 73/1">Октябрьская улица 73/1</option>';
+            address_options_str  += '<option value="Октябрьская улица 75">Октябрьская улица 75</option>';
+            address_options_str  += '<option value="Песочный переулок 10">Песочный переулок 10</option>';
+            address_options_str  += '<option value="Песочный переулок 11">Песочный переулок 11</option>';
+            address_options_str  += '<option value="Песочный переулок 12">Песочный переулок 12</option>';
+            address_options_str  += '<option value="Песочный переулок 13">Песочный переулок 13</option>';
+            address_options_str  += '<option value="Песочный переулок 14">Песочный переулок 14</option>';
+            address_options_str  += '<option value="Песочный переулок 15">Песочный переулок 15</option>';
+            address_options_str  += '<option value="Песочный переулок 19">Песочный переулок 19</option>';
+            address_options_str  += '<option value="Песочный переулок 2">Песочный переулок 2</option>';
+            address_options_str  += '<option value="Песочный переулок 22">Песочный переулок 22</option>';
+            address_options_str  += '<option value="Песочный переулок 22А">Песочный переулок 22А</option>';
+            address_options_str  += '<option value="Песочный переулок 23">Песочный переулок 23</option>';
+            address_options_str  += '<option value="Песочный переулок 24">Песочный переулок 24</option>';
+            address_options_str  += '<option value="Песочный переулок 25">Песочный переулок 25</option>';
+            address_options_str  += '<option value="Песочный переулок 27">Песочный переулок 27</option>';
+            address_options_str  += '<option value="Песочный переулок 27А">Песочный переулок 27А</option>';
+            address_options_str  += '<option value="Песочный переулок 28">Песочный переулок 28</option>';
+            address_options_str  += '<option value="Песочный переулок 3">Песочный переулок 3</option>';
+            address_options_str  += '<option value="Песочный переулок 30">Песочный переулок 30</option>';
+            address_options_str  += '<option value="Песочный переулок 31">Песочный переулок 31</option>';
+            address_options_str  += '<option value="Песочный переулок 31/1">Песочный переулок 31/1</option>';
+            address_options_str  += '<option value="Песочный переулок 35">Песочный переулок 35</option>';
+            address_options_str  += '<option value="Песочный переулок 37">Песочный переулок 37</option>';
+            address_options_str  += '<option value="Песочный переулок 39">Песочный переулок 39</option>';
+            address_options_str  += '<option value="Песочный переулок 4">Песочный переулок 4</option>';
+            address_options_str  += '<option value="Песочный переулок 40">Песочный переулок 40</option>';
+            address_options_str  += '<option value="Песочный переулок 41">Песочный переулок 41</option>';
+            address_options_str  += '<option value="Песочный переулок 42">Песочный переулок 42</option>';
+            address_options_str  += '<option value="Песочный переулок 43/1">Песочный переулок 43/1</option>';
+            address_options_str  += '<option value="Песочный переулок 43/2">Песочный переулок 43/2</option>';
+            address_options_str  += '<option value="Песочный переулок 45">Песочный переулок 45</option>';
+            address_options_str  += '<option value="Песочный переулок 46">Песочный переулок 46</option>';
+            address_options_str  += '<option value="Песочный переулок 48">Песочный переулок 48</option>';
+            address_options_str  += '<option value="Песочный переулок 5">Песочный переулок 5</option>';
+            address_options_str  += '<option value="Песочный переулок 50">Песочный переулок 50</option>';
+            address_options_str  += '<option value="Песочный переулок 52">Песочный переулок 52</option>';
+            address_options_str  += '<option value="Песочный переулок 52/1">Песочный переулок 52/1</option>';
+            address_options_str  += '<option value="Песочный переулок 54">Песочный переулок 54</option>';
+            address_options_str  += '<option value="Песочный переулок 56">Песочный переулок 56</option>';
+            address_options_str  += '<option value="Песочный переулок 58">Песочный переулок 58</option>';
+            address_options_str  += '<option value="Песочный переулок 6">Песочный переулок 6</option>';
+            address_options_str  += '<option value="Песочный переулок 60">Песочный переулок 60</option>';
+            address_options_str  += '<option value="Песочный переулок 62">Песочный переулок 62</option>';
+            address_options_str  += '<option value="Песочный переулок 7">Песочный переулок 7</option>';
+            address_options_str  += '<option value="Песочный переулок 8">Песочный переулок 8</option>';
+            address_options_str  += '<option value="Песочный переулок 9">Песочный переулок 9</option>';
+            address_options_str  += '<option value="Петропавловская улица 24">Петропавловская улица 24</option>';
+            address_options_str  += '<option value="Петропавловская улица 24А">Петропавловская улица 24А</option>';
+            address_options_str  += '<option value="Петропавловская улица 24Б">Петропавловская улица 24Б</option>';
+            address_options_str  += '<option value="Петропавловская улица 26">Петропавловская улица 26</option>';
+            address_options_str  += '<option value="Петропавловская улица 26/2">Петропавловская улица 26/2</option>';
+            address_options_str  += '<option value="Петропавловская улица 26/3">Петропавловская улица 26/3</option>';
+            address_options_str  += '<option value="Петропавловская улица 42">Петропавловская улица 42</option>';
+            address_options_str  += '<option value="Петропавловская улица 42/1">Петропавловская улица 42/1</option>';
+            address_options_str  += '<option value="Петропавловская улица 46">Петропавловская улица 46</option>';
+            address_options_str  += '<option value="Петропавловская улица 46А">Петропавловская улица 46А</option>';
+            address_options_str  += '<option value="Петропавловская улица 48">Петропавловская улица 48</option>';
+            address_options_str  += '<option value="Средне-Кирпичная улица 1">Средне-Кирпичная улица 1</option>';
+            address_options_str  += '<option value="Средне-Кирпичная улица 10">Средне-Кирпичная улица 10</option>';
+            address_options_str  += '<option value="Средне-Кирпичная улица 11">Средне-Кирпичная улица 11</option>';
+            address_options_str  += '<option value="Средне-Кирпичная улица 11/2">Средне-Кирпичная улица 11/2</option>';
+            address_options_str  += '<option value="Средне-Кирпичная улица 12">Средне-Кирпичная улица 12</option>';
+            address_options_str  += '<option value="Средне-Кирпичная улица 13">Средне-Кирпичная улица 13</option>';
+            address_options_str  += '<option value="Средне-Кирпичная улица 14">Средне-Кирпичная улица 14</option>';
+            address_options_str  += '<option value="Средне-Кирпичная улица 15">Средне-Кирпичная улица 15</option>';
+            address_options_str  += '<option value="Средне-Кирпичная улица 15 с1">Средне-Кирпичная улица 15 с1</option>';
+            address_options_str  += '<option value="Средне-Кирпичная улица 16">Средне-Кирпичная улица 16</option>';
+            address_options_str  += '<option value="Средне-Кирпичная улица 17">Средне-Кирпичная улица 17</option>';
+            address_options_str  += '<option value="Средне-Кирпичная улица 18">Средне-Кирпичная улица 18</option>';
+            address_options_str  += '<option value="Средне-Кирпичная улица 19">Средне-Кирпичная улица 19</option>';
+            address_options_str  += '<option value="Средне-Кирпичная улица 20">Средне-Кирпичная улица 20</option>';
+            address_options_str  += '<option value="Средне-Кирпичная улица 21">Средне-Кирпичная улица 21</option>';
+            address_options_str  += '<option value="Средне-Кирпичная улица 22">Средне-Кирпичная улица 22</option>';
+            address_options_str  += '<option value="Средне-Кирпичная улица 23">Средне-Кирпичная улица 23</option>';
+            address_options_str  += '<option value="Средне-Кирпичная улица 24">Средне-Кирпичная улица 24</option>';
+            address_options_str  += '<option value="Средне-Кирпичная улица 30">Средне-Кирпичная улица 30</option>';
+            address_options_str  += '<option value="Средне-Кирпичная улица 32">Средне-Кирпичная улица 32</option>';
+            address_options_str  += '<option value="Средне-Кирпичная улица 32/1">Средне-Кирпичная улица 32/1</option>';
+            address_options_str  += '<option value="Средне-Кирпичная улица 34">Средне-Кирпичная улица 34</option>';
+            address_options_str  += '<option value="Средне-Кирпичная улица 36">Средне-Кирпичная улица 36</option>';
+            address_options_str  += '<option value="Средне-Кирпичная улица 4">Средне-Кирпичная улица 4</option>';
+            address_options_str  += '<option value="Средне-Кирпичная улица 40">Средне-Кирпичная улица 40</option>';
+            address_options_str  += '<option value="Средне-Кирпичная улица 42">Средне-Кирпичная улица 42</option>';
+            address_options_str  += '<option value="Средне-Кирпичная улица 5">Средне-Кирпичная улица 5</option>';
+            address_options_str  += '<option value="Средне-Кирпичная улица 6">Средне-Кирпичная улица 6</option>';
+            address_options_str  += '<option value="Средне-Кирпичная улица 7">Средне-Кирпичная улица 7</option>';
+            address_options_str  += '<option value="Средне-Кирпичная улица 7А">Средне-Кирпичная улица 7А</option>';
+            address_options_str  += '<option value="Средне-Кирпичная улица 8">Средне-Кирпичная улица 8</option>';
+            address_options_str  += '<option value="Средне-Кирпичная улица 9">Средне-Кирпичная улица 9</option>';
+            address_options_str  += '<option value="Средне-Кирпичная улица 9А">Средне-Кирпичная улица 9А</option>';
+            address_options_str  += '<option value="Средне-Кирпичная улица 9Б">Средне-Кирпичная улица 9Б</option>';
+            address_options_str  += '<option value="Школьный переулок 12">Школьный переулок 12</option>';
+            address_options_str  += '<option value="Школьный переулок 14">Школьный переулок 14</option>';
+            address_options_str  += '<option value="Школьный переулок 16">Школьный переулок 16</option>';
+            address_options_str  += '<option value="Школьный переулок 18">Школьный переулок 18</option>';
+            address_options_str  += '<option value="Школьный переулок 19">Школьный переулок 19</option>';
+            address_options_str  += '<option value="Школьный переулок 20">Школьный переулок 20</option>';
+            address_options_str  += '<option value="Школьный переулок 21">Школьный переулок 21</option>';
+            address_options_str  += '<option value="Школьный переулок 22">Школьный переулок 22</option>';
+            address_options_str  += '<option value="Школьный переулок 24">Школьный переулок 24</option>';
+            address_options_str  += '<option value="Школьный переулок 25">Школьный переулок 25</option>';
+            address_options_str  += '<option value="Школьный переулок 26">Школьный переулок 26</option>';
+            address_options_str  += '<option value="Школьный переулок 27">Школьный переулок 27</option>';
+            address_options_str  += '<option value="Школьный переулок 28">Школьный переулок 28</option>';
+            address_options_str  += '<option value="Школьный переулок 29">Школьный переулок 29</option>';
+            address_options_str  += '<option value="Школьный переулок 31">Школьный переулок 31</option>';
+            address_options_str  += '<option value="Школьный переулок 33">Школьный переулок 33</option>';
+            address_options_str  += '<option value="Школьный тупик 27А">Школьный тупик 27А</option>';
+            address_options_str  += '<option value="Школьный тупик 27Б">Школьный тупик 27Б</option>';
+            address_options_str  += '<option value="Школьный тупик 27В">Школьный тупик 27В</option>';
+            address_options_str  += '<option value="Школьный тупик 34А">Школьный тупик 34А</option>';
+            address_options_str  += '<option value="Школьный тупик 34Б">Школьный тупик 34Б</option>';
+            address_options_str  += '<option value="переулок Красного Пожарника 1">переулок Красного Пожарника 1</option>';
+            address_options_str  += '<option value="переулок Красного Пожарника 1 с1">переулок Красного Пожарника 1 с1</option>';
+            address_options_str  += '<option value="переулок Красного Пожарника 10">переулок Красного Пожарника 10</option>';
+            address_options_str  += '<option value="переулок Красного Пожарника 11">переулок Красного Пожарника 11</option>';
+            address_options_str  += '<option value="переулок Красного Пожарника 12">переулок Красного Пожарника 12</option>';
+            address_options_str  += '<option value="переулок Красного Пожарника 13">переулок Красного Пожарника 13</option>';
+            address_options_str  += '<option value="переулок Красного Пожарника 14">переулок Красного Пожарника 14</option>';
+            address_options_str  += '<option value="переулок Красного Пожарника 15">переулок Красного Пожарника 15</option>';
+            address_options_str  += '<option value="переулок Красного Пожарника 15А">переулок Красного Пожарника 15А</option>';
+            address_options_str  += '<option value="переулок Красного Пожарника 16">переулок Красного Пожарника 16</option>';
+            address_options_str  += '<option value="переулок Красного Пожарника 16/1">переулок Красного Пожарника 16/1</option>';
+            address_options_str  += '<option value="переулок Красного Пожарника 17">переулок Красного Пожарника 17</option>';
+            address_options_str  += '<option value="переулок Красного Пожарника 17/1">переулок Красного Пожарника 17/1</option>';
+            address_options_str  += '<option value="переулок Красного Пожарника 18">переулок Красного Пожарника 18</option>';
+            address_options_str  += '<option value="переулок Красного Пожарника 2">переулок Красного Пожарника 2</option>';
+            address_options_str  += '<option value="переулок Красного Пожарника 2 с1">переулок Красного Пожарника 2 с1</option>';
+            address_options_str  += '<option value="переулок Красного Пожарника 3">переулок Красного Пожарника 3</option>';
+            address_options_str  += '<option value="переулок Красного Пожарника 4">переулок Красного Пожарника 4</option>';
+            address_options_str  += '<option value="переулок Красного Пожарника 5">переулок Красного Пожарника 5</option>';
+            address_options_str  += '<option value="переулок Красного Пожарника 6">переулок Красного Пожарника 6</option>';
+            address_options_str  += '<option value="переулок Красного Пожарника 7">переулок Красного Пожарника 7</option>';
+            address_options_str  += '<option value="переулок Красного Пожарника 8">переулок Красного Пожарника 8</option>';
+            address_options_str  += '<option value="переулок Красного Пожарника 9">переулок Красного Пожарника 9</option>';
+            address_options_str  += '<option value="улица Лермонтова 11">улица Лермонтова 11</option>';
+            address_options_str  += '<option value="улица Лермонтова 13">улица Лермонтова 13</option>';
+            address_options_str  += '<option value="улица Лермонтова 13/1">улица Лермонтова 13/1</option>';
+            address_options_str  += '<option value="улица Лермонтова 13А">улица Лермонтова 13А</option>';
+            address_options_str  += '<option value="улица Лермонтова 15">улица Лермонтова 15</option>';
+            address_options_str  += '<option value="улица Лермонтова 17">улица Лермонтова 17</option>';
+            address_options_str  += '<option value="улица Лермонтова 17/1">улица Лермонтова 17/1</option>';
+            address_options_str  += '<option value="улица Лермонтова 17/2">улица Лермонтова 17/2</option>';
+            address_options_str  += '<option value="улица Лермонтова 19">улица Лермонтова 19</option>';
+            address_options_str  += '<option value="улица Лермонтова 21">улица Лермонтова 21</option>';
+            address_options_str  += '<option value="улица Лермонтова 22">улица Лермонтова 22</option>';
+            address_options_str  += '<option value="улица Лермонтова 24">улица Лермонтова 24</option>';
+            address_options_str  += '<option value="улица Лермонтова 26">улица Лермонтова 26</option>';
+            address_options_str  += '<option value="улица Лермонтова 27">улица Лермонтова 27</option>';
+            address_options_str  += '<option value="улица Лермонтова 27/1">улица Лермонтова 27/1</option>';
+            address_options_str  += '<option value="улица Лермонтова 28">улица Лермонтова 28</option>';
+            address_options_str  += '<option value="улица Лермонтова 29">улица Лермонтова 29</option>';
+            address_options_str  += '<option value="улица Лермонтова 29/1">улица Лермонтова 29/1</option>';
+            address_options_str  += '<option value="улица Лермонтова 30">улица Лермонтова 30</option>';
+            address_options_str  += '<option value="улица Лермонтова 31">улица Лермонтова 31</option>';
+            address_options_str  += '<option value="улица Лермонтова 32">улица Лермонтова 32</option>';
+            address_options_str  += '<option value="улица Лермонтова 32А">улица Лермонтова 32А</option>';
+            address_options_str  += '<option value="улица Лермонтова 33">улица Лермонтова 33</option>';
+            address_options_str  += '<option value="улица Лермонтова 33/1">улица Лермонтова 33/1</option>';
+            address_options_str  += '<option value="улица Лермонтова 37">улица Лермонтова 37</option>';
+            address_options_str  += '<option value="улица Лермонтова 37/1">улица Лермонтова 37/1</option>';
+            address_options_str  += '<option value="улица Лермонтова 38">улица Лермонтова 38</option>';
+            address_options_str  += '<option value="улица Лермонтова 39">улица Лермонтова 39</option>';
+            address_options_str  += '<option value="улица Лермонтова 40">улица Лермонтова 40</option>';
+            address_options_str  += '<option value="улица Лермонтова 41 с2">улица Лермонтова 41 с2</option>';
+            address_options_str  += '<option value="улица Лермонтова 41А">улица Лермонтова 41А</option>';
+            address_options_str  += '<option value="улица Лермонтова 42">улица Лермонтова 42</option>';
+            address_options_str  += '<option value="улица Лермонтова 45">улица Лермонтова 45</option>';
+            address_options_str  += '<option value="улица Лермонтова 47">улица Лермонтова 47</option>';
+            address_options_str  += '<option value="улица Лермонтова 48">улица Лермонтова 48</option>';
+            address_options_str  += '<option value="улица Лермонтова 49">улица Лермонтова 49</option>';
+            address_options_str  += '<option value="улица Лермонтова 50">улица Лермонтова 50</option>';
+            address_options_str  += '<option value="улица Лермонтова 51">улица Лермонтова 51</option>';
+            address_options_str  += '<option value="улица Лермонтова 51/1">улица Лермонтова 51/1</option>';
+            address_options_str  += '<option value="улица Лермонтова 52">улица Лермонтова 52</option>';
+            address_options_str  += '<option value="улица Лермонтова 54">улица Лермонтова 54</option>';
+            address_options_str  += '<option value="улица Лермонтова 58/1">улица Лермонтова 58/1</option>';
+            address_options_str  += '<option value="улица Лермонтова 58А">улица Лермонтова 58А</option>';
+            address_options_str  += '<option value="улица Лермонтова 60">улица Лермонтова 60</option>';
+            address_options_str  += '<option value="улица Лермонтова 60 с1">улица Лермонтова 60 с1</option>';
+            address_options_str  += '<option value="улица Мамонтова 1">улица Мамонтова 1</option>';
+            address_options_str  += '<option value="улица Мамонтова 2">улица Мамонтова 2</option>';
+            address_options_str  += '<option value="улица Мамонтова 3">улица Мамонтова 3</option>';
+            address_options_str  += '<option value="улица Мамонтова 4">улица Мамонтова 4</option>';
+            address_options_str  += '<option value="улица Мамонтова 5">улица Мамонтова 5</option>';
+            address_options_str  += '<option value="улица Мамонтова 5А">улица Мамонтова 5А</option>';
+            address_options_str  += '<option value="улица Мамонтова 7">улица Мамонтова 7</option>';
+            address_options_str  += '<option value="улица Мамонтова 9">улица Мамонтова 9</option>';
+            address_options_str  += '<option value="улица Михаила Попова 1">улица Михаила Попова 1</option>';
+            address_options_str  += '<option value="улица Михаила Попова 2">улица Михаила Попова 2</option>';
+            address_options_str  += '<option value="улица Михаила Попова 3">улица Михаила Попова 3</option>';
+            address_options_str  += '<option value="улица Михаила Попова 4">улица Михаила Попова 4</option>';
+            address_options_str  += '<option value="улица Михаила Попова 5">улица Михаила Попова 5</option>';
+            address_options_str  += '<option value="улица Михаила Попова 6">улица Михаила Попова 6</option>';
+            address_options_str  += '<option value="улица Михаила Попова 7">улица Михаила Попова 7</option>';
+            address_options_str  += '<option value="улица Свердлова 13">улица Свердлова 13</option>';
+            address_options_str  += '<option value="улица Свердлова 17">улица Свердлова 17</option>';
+            address_options_str  += '<option value="улица Свердлова 3">улица Свердлова 3</option>';
+            address_options_str  += '<option value="улица Свердлова 4">улица Свердлова 4</option>';
+            address_options_str  += '<option value="улица Свердлова 5">улица Свердлова 5</option>';
+            address_options_str  += '<option value="улица Свердлова 6/1">улица Свердлова 6/1</option>';
+            address_options_str  += '<option value="улица Свердлова 9">улица Свердлова 9</option>';
+            address_options_str  += '<option value="улица Шишкова 11">улица Шишкова 11</option>';
+            address_options_str  += '<option value="улица Шишкова 13">улица Шишкова 13</option>';
+            address_options_str  += '<option value="улица Шишкова 13/1">улица Шишкова 13/1</option>';
+            address_options_str  += '<option value="улица Шишкова 13А">улица Шишкова 13А</option>';
+            address_options_str  += '<option value="улица Шишкова 15">улица Шишкова 15</option>';
+            address_options_str  += '<option value="улица Шишкова 15/1">улица Шишкова 15/1</option>';
+            address_options_str  += '<option value="улица Шишкова 16">улица Шишкова 16</option>';
+            address_options_str  += '<option value="улица Шишкова 17">улица Шишкова 17</option>';
+            address_options_str  += '<option value="улица Шишкова 18">улица Шишкова 18</option>';
+            address_options_str  += '<option value="улица Шишкова 19">улица Шишкова 19</option>';
+            address_options_str  += '<option value="улица Шишкова 20">улица Шишкова 20</option>';
+            address_options_str  += '<option value="улица Шишкова 20 с1">улица Шишкова 20 с1</option>';
+            address_options_str  += '<option value="улица Шишкова 20 с2">улица Шишкова 20 с2</option>';
+            address_options_str  += '<option value="улица Шишкова 20 с3">улица Шишкова 20 с3</option>';
+            address_options_str  += '<option value="улица Шишкова 20/7">улица Шишкова 20/7</option>';
+            address_options_str  += '<option value="улица Шишкова 20/8">улица Шишкова 20/8</option>';
+            address_options_str  += '<option value="улица Шишкова 21">улица Шишкова 21</option>';
+            address_options_str  += '<option value="улица Шишкова 23">улица Шишкова 23</option>';
+            address_options_str  += '<option value="улица Шишкова 25">улица Шишкова 25</option>';
+            address_options_str  += '<option value="улица Шишкова 26">улица Шишкова 26</option>';
+            address_options_str  += '<option value="улица Шишкова 26Б">улица Шишкова 26Б</option>';
+            address_options_str  += '<option value="улица Шишкова 27">улица Шишкова 27</option>';
+            address_options_str  += '<option value="улица Шишкова 28">улица Шишкова 28</option>';
+            address_options_str  += '<option value="улица Шишкова 29">улица Шишкова 29</option>';
+            address_options_str  += '<option value="улица Шишкова 30">улица Шишкова 30</option>';
+            address_options_str  += '<option value="улица Шишкова 32">улица Шишкова 32</option>';
+            address_options_str  += '<option value="улица Шишкова 34">улица Шишкова 34</option>';
+            address_options_str  += '<option value="улица Яковлева 101">улица Яковлева 101</option>';
+            address_options_str  += '<option value="улица Яковлева 103">улица Яковлева 103</option>';
+            address_options_str  += '<option value="улица Яковлева 105">улица Яковлева 105</option>';
+            address_options_str  += '<option value="улица Яковлева 34">улица Яковлева 34</option>';
+            address_options_str  += '<option value="улица Яковлева 36">улица Яковлева 36</option>';
+            address_options_str  += '<option value="улица Яковлева 38">улица Яковлева 38</option>';
+            address_options_str  += '<option value="улица Яковлева 40">улица Яковлева 40</option>';
+            address_options_str  += '<option value="улица Яковлева 42">улица Яковлева 42</option>';
+            address_options_str  += '<option value="улица Яковлева 43">улица Яковлева 43</option>';
+            address_options_str  += '<option value="улица Яковлева 44">улица Яковлева 44</option>';
+            address_options_str  += '<option value="улица Яковлева 44А с1">улица Яковлева 44А с1</option>';
+            address_options_str  += '<option value="улица Яковлева 45">улица Яковлева 45</option>';
+            address_options_str  += '<option value="улица Яковлева 46">улица Яковлева 46</option>';
+            address_options_str  += '<option value="улица Яковлева 47">улица Яковлева 47</option>';
+            address_options_str  += '<option value="улица Яковлева 48">улица Яковлева 48</option>';
+            address_options_str  += '<option value="улица Яковлева 49">улица Яковлева 49</option>';
+            address_options_str  += '<option value="улица Яковлева 50">улица Яковлева 50</option>';
+            address_options_str  += '<option value="улица Яковлева 51">улица Яковлева 51</option>';
+            address_options_str  += '<option value="улица Яковлева 53">улица Яковлева 53</option>';
+            address_options_str  += '<option value="улица Яковлева 55">улица Яковлева 55</option>';
+            address_options_str  += '<option value="улица Яковлева 57">улица Яковлева 57</option>';
+            address_options_str  += '<option value="улица Яковлева 58">улица Яковлева 58</option>';
+            address_options_str  += '<option value="улица Яковлева 58А">улица Яковлева 58А</option>';
+            address_options_str  += '<option value="улица Яковлева 58А с1">улица Яковлева 58А с1</option>';
+            address_options_str  += '<option value="улица Яковлева 59">улица Яковлева 59</option>';
+            address_options_str  += '<option value="улица Яковлева 61">улица Яковлева 61</option>';
+            address_options_str  += '<option value="улица Яковлева 64">улица Яковлева 64</option>';
+            address_options_str  += '<option value="улица Яковлева 65">улица Яковлева 65</option>';
+            address_options_str  += '<option value="улица Яковлева 65/1">улица Яковлева 65/1</option>';
+            address_options_str  += '<option value="улица Яковлева 65Б">улица Яковлева 65Б</option>';
+            address_options_str  += '<option value="улица Яковлева 68">улица Яковлева 68</option>';
+            address_options_str  += '<option value="улица Яковлева 70">улица Яковлева 70</option>';
+            address_options_str  += '<option value="улица Яковлева 72">улица Яковлева 72</option>';
+            address_options_str  += '<option value="улица Яковлева 74">улица Яковлева 74</option>';
+            address_options_str  += '<option value="улица Яковлева 75">улица Яковлева 75</option>';
+            address_options_str  += '<option value="улица Яковлева 78">улица Яковлева 78</option>';
+            address_options_str  += '<option value="улица Яковлева 78А">улица Яковлева 78А</option>';
+            address_options_str  += '<option value="улица Яковлева 79">улица Яковлева 79</option>';
+            address_options_str  += '<option value="улица Яковлева 80">улица Яковлева 80</option>';
+            address_options_str  += '<option value="улица Яковлева 81">улица Яковлева 81</option>';
+            address_options_str  += '<option value="улица Яковлева 82">улица Яковлева 82</option>';
+            address_options_str  += '<option value="улица Яковлева 84">улица Яковлева 84</option>';
+            address_options_str  += '<option value="улица Яковлева 85">улица Яковлева 85</option>';
+            address_options_str  += '<option value="улица Яковлева 85А">улица Яковлева 85А</option>';
+            address_options_str  += '<option value="улица Яковлева 87">улица Яковлева 87</option>';
+            address_options_str  += '<option value="улица Яковлева 87А">улица Яковлева 87А</option>';
+            address_options_str  += '<option value="улица Яковлева 91">улица Яковлева 91</option>';
+            address_options_str  += '<option value="улица Яковлева 93">улица Яковлева 93</option>';
+            address_options_str  += '<option value="улица Яковлева 97">улица Яковлева 97</option>';
+            address_options_str  += '<option value="улица Яковлева 97/1">улица Яковлева 97/1</option>';
+            address_options_str  += '<option value="улица Яковлева 99">улица Яковлева 99</option>';
+            sel_address.innerHTML = address_options_str;
+            div_address.appendChild(sel_address);
+            var lab_address = document.createElement('div');
+            lab_address.innerHTML = 'address';
+            lab_address.className = 'filterlabel';
+            div_address.appendChild(lab_address);
+            var reset_address = document.createElement('div');
+            reset_address.innerHTML = 'clear filter';
+            reset_address.className = 'filterlabel';
+            reset_address.onclick = function() {
+                var options = document.getElementById("sel_address").options;
+                for (var i=0; i < options.length; i++) {
+                    options[i].selected = false;
+                }
+                filterFunc();
+            };
+            div_address.appendChild(reset_address);
+        </script>
+    </body>
+</html>
